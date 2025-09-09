@@ -1,4 +1,4 @@
-package main.java.backend.websocket;
+package backend.websocket;
 
 public class WebsocketHandler {
 
