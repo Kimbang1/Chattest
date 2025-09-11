@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://127.0.0.1:5432/Chattest
     username: kbang
-    password: 0629
+    password: 1234
   jpa:
     properties:
       hibernate:

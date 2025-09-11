@@ -8,6 +8,7 @@
     plugins {
         id 'org.springframework.boot' version '3.2.5'
         id 'io.spring.dependency-management' version '1.1.4'
+        
         id 'java'
         id 'application'
     }
@@ -23,9 +24,10 @@ dependencies {
     
     // Spring Data JPA 추가 (데이터베이스 작업을 위함)
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     // PostgreSQL 드라이버 (runtimeOnly로 변경)
     runtimeOnly 'org.postgresql:postgresql'
+
+    
     
     // 롬복 (보일러플레이트 코드 감소)
     compileOnly 'org.projectlombok:lombok'

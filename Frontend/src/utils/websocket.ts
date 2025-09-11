@@ -1,4 +1,4 @@
-import { Client, IMessage } from 'stompjs';
+import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 const WEBSOCKET_URL = 'http://localhost:8080/ws-stomp'; // Use http for SockJS
