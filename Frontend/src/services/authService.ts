@@ -1,9 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 
-export const login = async (username, password) => {
+interface AuthResponse {
+  token: string;
+  // 다른 사용자 정보가 있다면 추가
+}
+
+export const login = async (username: string, password: string ) => {
+  const url = `${API_BASE_URL}/api/auth/login`;
+  console.log(`[authService] Attempting to fetch from: ${url}`); // 로그 추가
+
   try { // 👈 1. 전체 로직을 try 블록으로 감쌉니다.
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +44,7 @@ export const login = async (username, password) => {
   }
 };
 
-export const signup = async (username, email, password) => {
+export const signup = async (username: string, email: string, password: string) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: 'POST',

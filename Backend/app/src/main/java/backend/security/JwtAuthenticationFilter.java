@@ -40,10 +40,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         jwt = authHeader.substring(7);
         username = jwtTokenProvider.extractUsername(jwt);
+        System.out.println("JWT Filter: Extracted Username - " + username); // 로그 추가
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            System.out.println("JWT Filter: UserDetails loaded for - " + userDetails.getUsername()); // 로그 추가
             if (jwtTokenProvider.isTokenValid(jwt, userDetails)) {
+                System.out.println("JWT Filter: Token is valid."); // 로그 추가
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -53,6 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                System.out.println("JWT Filter: Authentication set in SecurityContext."); // 로그 추가
+            } else {
+                System.out.println("JWT Filter: Token is NOT valid."); // 로그 추가
             }
         }
         filterChain.doFilter(request, response);

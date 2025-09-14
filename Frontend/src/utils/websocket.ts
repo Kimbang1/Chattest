@@ -1,7 +1,9 @@
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { API_BASE_URL } from '@env'; // .env 파일에서 API_BASE_URL을 가져옵니다.
 
-const WEBSOCKET_URL = 'http://10.0.2.2:8080/ws-stomp'; // Use http for SockJS
+// API_BASE_URL을 사용하여 웹소켓 URL을 동적으로 생성합니다.
+const WEBSOCKET_URL = `${API_BASE_URL}/ws-stomp`;
 
 let stompClient: Client | null = null;
 let reconnectAttempts = 0;

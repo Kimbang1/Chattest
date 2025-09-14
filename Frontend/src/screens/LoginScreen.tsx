@@ -17,18 +17,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, setToken }) => {
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
+    console.log('[LoginScreen] 로그인 버튼 클릭됨.');
     try {
+      console.log(`[LoginScreen] 로그인 시도 >> 사용자: ${username}`);
       const response = await login(username, password);
-      console.log('Login successful:', response);
+      console.log('[LoginScreen] 로그인 성공, 응답:', response);
+
       Alert.alert('로그인 성공', '환영합니다!');
-      // 부모(App.tsx)의 상태를 업데이트하여 화면을 전환합니다.
       if (response.token) {
-        setToken(response.token);
+        setToken(response.token); // App.js의 상태를 변경하여 MainNavigator로 전환
       }
     } catch (error: any) {
+      // 💥 authService에서 던져진 상세한 오류를 여기서 출력합니다.
+      console.error('[LoginScreen] 로그인 실패:', error);
       Alert.alert('로그인 실패', error.message || '로그인 중 오류가 발생했습니다.');
     }
   };
+
 
   return (
     <View style={styles.container}>

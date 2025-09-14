@@ -5,6 +5,7 @@ import { Message } from '@types/chat.d';
 
 interface UseChatWebSocketProps {
   roomId: string;
+  username: string; // 실제 사용자 이름을 받도록 추가
 }
 
 interface UseChatWebSocketReturn {
@@ -14,10 +15,10 @@ interface UseChatWebSocketReturn {
   currentUser: string;
 }
 
-const useChatWebSocket = ({ roomId }: UseChatWebSocketProps): UseChatWebSocketReturn => {
+const useChatWebSocket = ({ roomId, username }: UseChatWebSocketProps): UseChatWebSocketReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const currentUser = useRef('User' + Math.floor(Math.random() * 1000)).current; // Persist user across re-renders
+  const currentUser = useRef(username).current; // 실제 사용자 이름을 사용하도록 변경
 
   useEffect(() => {
     const onConnected = () => {

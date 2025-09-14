@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { ChatRoomScreenStyles as styles } from '@styles/chat/ChatRoomScreenStyles';
@@ -6,11 +5,12 @@ import MessageBubble from '@components/chat/MessageBubble';
 import useChatWebSocket from '@hooks/useChatWebSocket';
 
 const ChatRoomScreen = ({ route }: any) => {
-  const { roomId, roomName } = route.params;
+  const { roomId, roomName, currentUser } = route.params; // currentUser를 route.params에서 받도록 추가
   const [inputText, setInputText] = useState<string>('');
   const flatListRef = useRef<FlatList>(null);
 
-  const { messages, isConnected, sendMessage } = useChatWebSocket({ roomId });
+  // useChatWebSocket 훅에 currentUser를 전달
+  const { messages, isConnected, sendMessage } = useChatWebSocket({ roomId, username: currentUser });
 
   useEffect(() => {
     if (flatListRef.current) {
