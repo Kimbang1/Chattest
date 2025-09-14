@@ -1,7 +1,7 @@
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-const WEBSOCKET_URL = 'http://localhost:8080/ws-stomp'; // Use http for SockJS
+const WEBSOCKET_URL = 'http://10.0.2.2:8080/ws-stomp'; // Use http for SockJS
 
 let stompClient: Client | null = null;
 let reconnectAttempts = 0;

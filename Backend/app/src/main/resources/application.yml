@@ -1,8 +1,16 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
 spring:
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/Chattest
+    url: jdbc:postgresql://localhost:5432/Chattest
     username: kbang
-    password: 1234
+    password: 0629
   jpa:
     properties:
       hibernate:

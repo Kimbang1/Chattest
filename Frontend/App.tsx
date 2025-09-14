@@ -1,45 +1,56 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  
-} from 'react-native-safe-area-context';
-
+import React, { useEffect, useState } from 'react';
+import { StatusBar, useColorScheme, View, ActivityIndicator } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { getToken, setToken as saveToken } from './src/services/authService'; // setToken 추가
 
-import ChatListScreen from './src/screens/ChatListScreen';
-import ChatRoomScreen from './src/screens/ChatRoomScreen';
-
-const Stack = createNativeStackNavigator();
+import AuthNavigator from './src/navigation/AuthNavigation';
+import MainNavigator from './src/navigation/MainNavigator';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+  const [isLoading, setIsLoading] = useState(true);
+  const [userToken, setUserToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const token = await getToken();
+        setUserToken(token);
+      } catch (error) {
+        console.error('Failed to check login status:', error);
+        setUserToken(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkLoginStatus();
+  }, []);
+
+  // 로그인 상태를 변경하는 함수
+  const handleSetToken = async (token: string | null) => {
+    if (token) {
+      await saveToken(token); // AsyncStorage에 토큰 저장
+    }
+    setUserToken(token);
+  };
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="ChatList">
-          <Stack.Screen name="ChatList" component={ChatListScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={({ route }) => ({ title: route.params?.roomName || 'Chat Room' })} />
-        </Stack.Navigator>
+        {userToken ? <MainNavigator setToken={handleSetToken} /> : <AuthNavigator setToken={handleSetToken} />}
       </NavigationContainer>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;

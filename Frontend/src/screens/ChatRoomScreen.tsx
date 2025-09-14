@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
-import { ChatRoomScreenStyles as styles } from '../styles/chat/ChatRoomScreenStyles';
-import MessageBubble from '../components/chat/MessageBubble';
-import useChatWebSocket from '../hooks/useChatWebSocket';
+import { ChatRoomScreenStyles as styles } from '@styles/chat/ChatRoomScreenStyles';
+import MessageBubble from '@components/chat/MessageBubble';
+import useChatWebSocket from '@hooks/useChatWebSocket';
 
 const ChatRoomScreen = ({ route }: any) => {
   const { roomId, roomName } = route.params;

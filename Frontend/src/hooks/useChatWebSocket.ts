@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
-import { connectWebSocket, disconnectWebSocket, sendMessage as sendWsMessage, subscribeToTopic } from '../utils/websocket';
-import { Message } from '../types/chat.d';
+import { connectWebSocket, disconnectWebSocket, sendMessage as sendWsMessage, subscribeToTopic } from '@utils/websocket';
+import { Message } from '@types/chat.d';
 
 interface UseChatWebSocketProps {
   roomId: string;

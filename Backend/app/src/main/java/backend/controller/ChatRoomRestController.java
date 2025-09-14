@@ -16,6 +16,7 @@ public class ChatRoomRestController {
     public List<ChatRoomID> getChatRooms() {
         // TODO: Implement actual service call to fetch chat rooms from a database or service layer.
         // For now, returning an empty list as hardcoded data has been removed.
+                System.out.print("ChatController:요청이 들어옴");
         return Arrays.asList();
     }
 }

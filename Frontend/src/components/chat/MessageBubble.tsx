@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Message } from '../../types/chat.d';
+import { Message } from '@@types/chat.d';
 
 interface MessageBubbleProps {
   message: Message;

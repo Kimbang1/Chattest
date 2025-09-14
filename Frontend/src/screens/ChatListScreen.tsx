@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
-import { ChatListScreenStyles as styles } from '../styles/chat/ChatListScreenStyles';
+import { ChatListScreenStyles as styles } from '@styles/chat/ChatListScreenStyles';
 
-import { ChatRoom } from '../types/chat.d';
-import { fetchChatRooms } from '../services/chatRoomService';
+import { ChatRoom } from '@types/chat.d';
+import { fetchChatRooms } from '@services/chatRoomService';
 
 const ChatListScreen = ({ navigation }: any) => {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);

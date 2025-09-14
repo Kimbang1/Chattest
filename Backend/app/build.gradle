@@ -27,7 +27,15 @@ dependencies {
     // PostgreSQL 드라이버 (runtimeOnly로 변경)
     runtimeOnly 'org.postgresql:postgresql'
 
+    // Spring Security 추가
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     
+    
+    // JWT 라이브러리 추가
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
     
     // 롬복 (보일러플레이트 코드 감소)
     compileOnly 'org.projectlombok:lombok'
