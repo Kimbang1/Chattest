@@ -32,6 +32,11 @@ const FriendListScreen: React.FC<FriendListScreenProps> = ({ navigation }) => {
   const fetchCurrentUser = async () => {
     try {
       const token = await getToken();
+      // console.log("!!!!!!!!");
+      // console.log("JWT Token:", token);
+
+      // console.log("API_BASE_URL 가져오느냐:", API_BASE_URL);
+
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -61,6 +66,9 @@ const FriendListScreen: React.FC<FriendListScreenProps> = ({ navigation }) => {
   const fetchFriends = async () => {
     try {
       const token = await getToken();
+      console.log("Sending request to:", `${API_BASE_URL}/api/friends`);
+      console.log("Using token:", token);
+
       const response = await fetch(`${API_BASE_URL}/api/friends`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -68,10 +76,13 @@ const FriendListScreen: React.FC<FriendListScreenProps> = ({ navigation }) => {
         },
       });
 
+      console.log("상태 응답 :", response.status);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data: FriendDto[] = await response.json();
+      console.log("Friends data:", data);
       setFriends(data);
     } catch (error) {
       console.error("Error fetching friends:", error);

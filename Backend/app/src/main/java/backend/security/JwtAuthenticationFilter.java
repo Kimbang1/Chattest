@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,7 +15,12 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import io.jsonwebtoken.Claims;
+
+import io.jsonwebtoken.Claims;
+
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -40,27 +46,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         jwt = authHeader.substring(7);
         username = jwtTokenProvider.extractUsername(jwt);
-        System.out.println("JWT Filter: Extracted Username - " + username); // 로그 추가
+        System.out.println("JWT Filter: Extracted Username - " + username); 
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-            System.out.println("JWT Filter: UserDetails loaded for - " + userDetails.getUsername()); // 로그 추가
-            if (jwtTokenProvider.isTokenValid(jwt, userDetails)) {
-                System.out.println("JWT Filter: Token is valid."); // 로그 추가
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                System.out.println("JWT Filter: Authentication set in SecurityContext."); // 로그 추가
-            } else {
-                System.out.println("JWT Filter: Token is NOT valid."); // 로그 추가
-            }
-        }
+ if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+    Claims claims = jwtTokenProvider.extractAllClaims(jwt); // public으로
+    List<String> roles = claims.get("roles", List.class);
+    var authorities = roles.stream()
+                       .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                       .map(SimpleGrantedAuthority::new)
+                       .toList();
+
+    UsernamePasswordAuthenticationToken authToken =
+            new UsernamePasswordAuthenticationToken(username, null, authorities);
+    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+    SecurityContextHolder.getContext().setAuthentication(authToken);
+
+    System.out.println("JWT Filter: Authentication set in SecurityContext with roles: " + authorities);
+}
+
+
         filterChain.doFilter(request, response);
     }
 }

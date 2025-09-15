@@ -28,7 +28,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, setToken }) => {
         setToken(response.token); // App.js의 상태를 변경하여 MainNavigator로 전환
       }
     } catch (error: any) {
-      // 💥 authService에서 던져진 상세한 오류를 여기서 출력합니다.
+      // 💥 authService에서 던져진 상세한 오류를 여기서 출력
       console.error('[LoginScreen] 로그인 실패:', error);
       Alert.alert('로그인 실패', error.message || '로그인 중 오류가 발생했습니다.');
     }
