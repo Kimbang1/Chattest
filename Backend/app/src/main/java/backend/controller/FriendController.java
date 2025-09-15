@@ -66,4 +66,10 @@ public class FriendController {
         String currentUsername = getCurrentUsername();
         return ResponseEntity.ok(friendService.getPendingRequests(currentUsername));
     }
+
+    @DeleteMapping("/{friendshipId}")
+    public ResponseEntity<Void> unfriend(@PathVariable Long friendshipId) {
+        friendService.unfriend(friendshipId);
+        return ResponseEntity.ok().build();
+    }
 }

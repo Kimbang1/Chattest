@@ -59,14 +59,40 @@ public class FriendService {
         Friend friend = friendRepository.findById(friendshipId).orElseThrow(() -> new RuntimeException("Friendship not found"));
         friend.setStatus(FriendshipStatus.ACCEPTED);
         friendRepository.save(friend);
+
+        // Check if reciprocal friendship already exists
+        friendRepository.findByRequesterAndReceiver(friend.getReceiver(), friend.getRequester()).ifPresentOrElse(
+            existingFriend -> {
+                existingFriend.setStatus(FriendshipStatus.ACCEPTED);
+                friendRepository.save(existingFriend);
+            },
+            () -> {
+                Friend reciprocalFriend = Friend.builder()
+                        .requester(friend.getReceiver())
+                        .receiver(friend.getRequester())
+                        .status(FriendshipStatus.ACCEPTED)
+                        .build();
+                friendRepository.save(reciprocalFriend);
+            }
+        );
     }
 
     // 친구 요청 거절
     @Transactional
     public void declineFriendRequest(Long friendshipId) {
-        Friend friend = friendRepository.findById(friendshipId).orElseThrow(() -> new RuntimeException("Friendship not found"));
-        friend.setStatus(FriendshipStatus.DECLINED);
-        friendRepository.save(friend);
+        friendRepository.deleteById(friendshipId);
+    }
+
+    @Transactional
+    public void unfriend(Long friendshipId) {
+        Friend friend1 = friendRepository.findById(friendshipId).orElseThrow(() -> new RuntimeException("Friendship not found"));
+        User user1 = friend1.getRequester();
+        User user2 = friend1.getReceiver();
+
+        Friend friend2 = friendRepository.findByRequesterAndReceiver(user2, user1).orElseThrow(() -> new RuntimeException("Friendship not found"));
+
+        friendRepository.delete(friend1);
+        friendRepository.delete(friend2);
     }
 
     // 내 친구 목록 조회 (수락된 상태만)
@@ -74,7 +100,7 @@ public class FriendService {
         User currentUser = userRepository.findByUsername(currentUsername).orElseThrow(() -> new RuntimeException("User not found"));
         
         // 내가 요청해서 수락된 경우 + 나에게 요청해서 내가 수락한 경우
-        Stream<Friend> friendsStream = friendRepository.findByRequesterOrReceiverAndStatus(currentUser, currentUser, FriendshipStatus.ACCEPTED).stream();
+        Stream<Friend> friendsStream = friendRepository.findFriendsByUserAndStatus(currentUser, FriendshipStatus.ACCEPTED).stream();
 
         return friendsStream.map(friend -> {
             User friendUser = friend.getRequester().equals(currentUser) ? friend.getReceiver() : friend.getRequester();

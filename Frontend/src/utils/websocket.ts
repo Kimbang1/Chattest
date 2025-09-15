@@ -1,85 +1,120 @@
-import { Client, IMessage } from '@stomp/stompjs';
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { API_BASE_URL } from '@env'; // .env 파일에서 API_BASE_URL을 가져옵니다.
 
-// API_BASE_URL을 사용하여 웹소켓 URL을 동적으로 생성합니다.
+/**
+ * SockJS는 http/https 프로토콜로 연결을 시작하므로,
+ * API_BASE_URL이 'http://...' 또는 'https://...' 형태인지 확인하세요.
+ */
 const WEBSOCKET_URL = `${API_BASE_URL}/ws-stomp`;
+console.log("WebSocket URL for SockJS:", WEBSOCKET_URL);
 
-let stompClient: Client | null = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_INTERVAL = 3000; // 3 seconds
-
+// 메시지 수신 시 호출될 콜백 함수의 타입을 정의합니다.
 interface MessageCallback {
   (message: any): void;
 }
 
-export const connectWebSocket = (onConnected: () => void, onMessageReceived: MessageCallback, onError: (error: any) => void) => {
-  if (stompClient && stompClient.connected) {
-    onConnected();
-    return;
-  }
-
-  const socket = new SockJS(WEBSOCKET_URL);
-  stompClient = new Client({
-    webSocketFactory: () => socket,
+/**
+ * STOMP 클라이언트를 생성하고 기본 설정을 구성합니다.
+ * @param onConnected - 웹소켓 연결 성공 시 호출될 콜백
+ * @param onError - 오류 발생 시 호출될 콜백
+ * @returns {Client} 설정이 완료된 STOMP 클라이언트 객체
+ */
+export const createStompClient = (onConnected: () => void, onError: (error: any) => void): Client => {
+  const client = new Client({
+    // SockJS를 웹소켓 폴백(fallback)으로 사용합니다.
+    webSocketFactory: () => new SockJS(WEBSOCKET_URL),
+    
+    // 디버그 로그를 콘솔에 출력합니다.
     debug: (str) => {
-      console.log(str);
+      console.log(new Date(), str);
     },
-    reconnectDelay: RECONNECT_INTERVAL,
+
+    // 연결이 끊겼을 때 3초마다 재연결을 시도합니다.
+    reconnectDelay: 3000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
+
+    // 연결 성공 시 onConnected 콜백을 호출합니다.
+    onConnect: () => {
+      console.log('✅ WebSocket Connected');
+      onConnected();
+    },
+    
+    // STOMP 프로토콜 오류 발생 시 호출됩니다.
+    onStompError: (frame) => {
+      const errorMessage = frame.headers['message'] || 'STOMP Error';
+      console.error('❌ Broker reported error: ' + errorMessage);
+      console.error('Additional details: ' + frame.body);
+      onError(frame);
+    },
+
+    // 웹소켓 자체의 연결 오류 발생 시 호출됩니다.
+    onWebSocketError: (error) => {
+      console.error('❌ WebSocket connection error:', error);
+      onError(error);
+    },
+
+    // 웹소켓 연결이 닫혔을 때 호출됩니다.
+    onWebSocketClose: (event) => {
+      console.log('🔌 WebSocket connection closed:', event);
+    }
   });
 
-  stompClient.connect(
-    {},
-    () => {
-      console.log('Connected to WebSocket');
-      reconnectAttempts = 0;
-      onConnected();
-      // Subscribe to a general topic for testing, adjust as needed
-      stompClient?.subscribe('/topic/public', (message: IMessage) => {
-        onMessageReceived(JSON.parse(message.body));
-      });
-    },
-    (error: any) => {
-      console.error('WebSocket connection error:', error);
-      onError(error);
-      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-        reconnectAttempts++;
-        console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-        setTimeout(() => connectWebSocket(onConnected, onMessageReceived, onError), RECONNECT_INTERVAL);
-      } else {
-        console.error('Max reconnect attempts reached. Please refresh the page.');
-      }
-    }
-  );
+  return client;
 };
 
-export const disconnectWebSocket = () => {
-  if (stompClient) {
-    stompClient.disconnect(() => {
-      console.log('Disconnected from WebSocket');
-      stompClient = null;
-    });
+/**
+ * 활성화된 STOMP 클라이언트의 연결을 끊습니다.
+ * @param client - 비활성화할 STOMP 클라이언트
+ */
+export const disconnectWebSocket = (client: Client | null) => {
+  if (client) {
+    client.deactivate();
+    console.log('WebSocket disconnected');
   }
 };
 
-export const sendMessage = (destination: string, message: any) => {
-  if (stompClient && stompClient.connected) {
-    stompClient.send(destination, {}, JSON.stringify(message));
+/**
+ * 특정 토픽으로 메시지를 전송(publish)합니다.
+ * @param client - STOMP 클라이언트
+ * @param destination - 메시지를 보낼 주소(토픽)
+ * @param message - 전송할 메시지 객체 (JSON으로 변환됨)
+ */
+export const sendMessage = (client: Client | null, destination: string, message: any) => {
+  if (client && client.connected) {
+    client.publish({ destination, body: JSON.stringify(message) });
   } else {
     console.warn('Cannot send message: WebSocket not connected');
   }
 };
 
-export const subscribeToTopic = (topic: string, callback: MessageCallback) => {
-  if (stompClient && stompClient.connected) {
-    return stompClient.subscribe(topic, (message: IMessage) => {
+/**
+ * 특정 토픽을 구독하여 메시지를 수신합니다.
+ * @param client - STOMP 클라이언트
+ * @param topic - 구독할 주소(토픽)
+ * @param callback - 메시지 수신 시 호출될 콜백 함수
+ * @returns {StompSubscription | null} 구독 객체 (나중에 구독 취소 시 사용)
+ */
+export const subscribeToTopic = (client: Client | null, topic: string, callback: MessageCallback): StompSubscription | null => {
+  if (client && client.connected) {
+    console.log(`Subscribing to topic: ${topic}`);
+    return client.subscribe(topic, (message: IMessage) => {
       callback(JSON.parse(message.body));
     });
   } else {
-    console.warn('Cannot subscribe: WebSocket not connected');
+    console.warn(`Cannot subscribe to topic "${topic}": WebSocket not connected`);
     return null;
+  }
+};
+
+/**
+ * 토픽 구독을 취소합니다.
+ * @param subscription - 구독 취소할 StompSubscription 객체
+ */
+export const unsubscribeFromTopic = (subscription: StompSubscription | null) => {
+  if (subscription) {
+    subscription.unsubscribe();
+    console.log('Unsubscribed from topic');
   }
 };

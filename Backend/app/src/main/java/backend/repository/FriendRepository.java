@@ -4,6 +4,8 @@ import backend.entity.Friend;
 import backend.entity.FriendshipStatus;
 import backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,5 +21,6 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
     List<Friend> findByReceiverAndStatus(User receiver, FriendshipStatus status);
 
     // 특정 사용자의 모든 친구 관계 (요청했거나 받은 것 모두)를 찾습니다.
-    List<Friend> findByRequesterOrReceiverAndStatus(User user1, User user2, FriendshipStatus status);
+    @Query("SELECT f FROM Friend f WHERE (f.requester = :user OR f.receiver = :user) AND f.status = :status")
+    List<Friend> findFriendsByUserAndStatus(@Param("user") User user, @Param("status") FriendshipStatus status);
 }

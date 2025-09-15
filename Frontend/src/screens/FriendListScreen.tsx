@@ -90,6 +90,22 @@ const FriendListScreen: React.FC<FriendListScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handleUnfriend = async (friendshipId: number) => {
+    try {
+      const token = await getToken();
+      await fetch(`${API_BASE_URL}/api/friends/${friendshipId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      fetchFriends();
+    } catch (error) {
+      console.error("Error unfriending:", error);
+      Alert.alert("오류", "친구 삭제에 실패했습니다.");
+    }
+  };
+
   const renderItem = ({ item }: { item: FriendDto }) => {
     if (currentUserId === null) return null; // 현재 사용자 ID가 없으면 렌더링하지 않음
 
@@ -98,12 +114,20 @@ const FriendListScreen: React.FC<FriendListScreenProps> = ({ navigation }) => {
     const roomId = `chat_${userIds[0]}_${userIds[1]}`;
 
     return (
-      <TouchableOpacity
-        style={styles.friendItem}
-        onPress={() => navigation.navigate('ChatRoom', { roomId: roomId, roomName: item.user.username, currentUser: currentUsername })}
-      >
-        <Text style={styles.friendName}>{item.user.username}</Text>
-      </TouchableOpacity>
+      <View style={styles.friendItemContainer}>
+        <TouchableOpacity
+          style={styles.friendItem}
+          onPress={() => navigation.navigate('ChatRoom', { roomId: roomId, roomName: item.user.username, currentUser: currentUsername })}
+        >
+          <Text style={styles.friendName}>{item.user.username}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.unfriendButton}
+          onPress={() => handleUnfriend(item.friendshipId)}
+        >
+          <Text style={styles.unfriendButtonText}>삭제</Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -135,7 +159,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#333',
   },
-  friendItem: {
+  friendItemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 10,
@@ -146,9 +173,23 @@ const styles = StyleSheet.create({
     shadowRadius: 1.41,
     elevation: 2,
   },
+  friendItem: {
+    flex: 1,
+  },
   friendName: {
     fontSize: 18,
     color: '#333',
+  },
+  unfriendButton: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  unfriendButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   listContent: {
     paddingBottom: 20,
@@ -160,5 +201,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
 });
+
+
 
 export default FriendListScreen;

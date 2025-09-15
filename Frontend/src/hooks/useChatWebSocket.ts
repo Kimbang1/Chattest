@@ -1,49 +1,48 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
-import { connectWebSocket, disconnectWebSocket, sendMessage as sendWsMessage, subscribeToTopic } from '@utils/websocket';
-import { Message } from '@types/chat.d';
+import { Client } from '@stomp/stompjs';
+import { createStompClient, disconnectWebSocket, sendMessage as sendWsMessage, subscribeToTopic } from '@utils/websocket';
+import { Message } from '../types/chat.d';
 
 interface UseChatWebSocketProps {
   roomId: string;
-  username: string; // 실제 사용자 이름을 받도록 추가
+  username: string;
 }
 
 interface UseChatWebSocketReturn {
   messages: Message[];
   isConnected: boolean;
   sendMessage: (content: string) => void;
-  currentUser: string;
 }
 
 const useChatWebSocket = ({ roomId, username }: UseChatWebSocketProps): UseChatWebSocketReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const currentUser = useRef(username).current; // 실제 사용자 이름을 사용하도록 변경
+  const clientRef = useRef<Client | null>(null);
 
   useEffect(() => {
     const onConnected = () => {
       setIsConnected(true);
       console.log('WebSocket Connected');
-      // Send JOIN message
-      sendWsMessage('/app/chat.addUser', {
-        sender: currentUser,
-        type: 'JOIN',
-        roomId: roomId,
-      });
-
-      // Subscribe to the specific chat room topic
-      subscribeToTopic(`/topic/chat/${roomId}`, (msg: any) => {
+      subscribeToTopic(clientRef.current, `/topic/chat/${roomId}`, (msg: any) => {
         setMessages((prevMessages) => [
           ...prevMessages,
           {
             id: String(prevMessages.length + 1),
             text: msg.type === 'JOIN' || msg.type === 'LEAVE' ? `${msg.sender} ${msg.type === 'JOIN' ? 'joined' : 'left'} the chat!` : msg.content,
-            sender: msg.sender === currentUser ? 'user' : 'other',
+            sender: msg.sender === username ? 'user' : 'other',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             type: msg.type,
             senderName: msg.sender,
           },
         ]);
+      });
+
+      sendWsMessage(clientRef.current, '/app/chat.addUser', {
+        sender: username,
+        type: 'JOIN',
+        roomId: roomId,
       });
     };
 
@@ -53,32 +52,32 @@ const useChatWebSocket = ({ roomId, username }: UseChatWebSocketProps): UseChatW
       Alert.alert('Connection Error', 'Could not connect to chat server.');
     };
 
-    connectWebSocket(onConnected, () => {}, onError); // onMessageReceived is handled by subscribeToTopic
+    const client = createStompClient(onConnected, () => {}, onError);
+    client.activate();
+    clientRef.current = client;
 
     return () => {
-      if (isConnected) {
-        // Send LEAVE message
-        sendWsMessage('/app/chat.sendMessage', {
-          sender: currentUser,
+      if (clientRef.current) {
+        sendWsMessage(clientRef.current, '/app/chat.sendMessage', {
+          sender: username,
           type: 'LEAVE',
           roomId: roomId,
         });
+        disconnectWebSocket(clientRef.current);
       }
-      disconnectWebSocket();
     };
-  }, [roomId, currentUser, isConnected]);
+  }, [roomId, username]);
 
   const sendMessage = (content: string) => {
-    if (content.trim() && isConnected) {
-      const chatMessage = {
-        sender: currentUser,
-        content: content.trim(),
-        type: 'CHAT',
-        roomId: roomId,
-      };
-      sendWsMessage('/app/chat.sendMessage', chatMessage);
-    } else if (!isConnected) {
-      Alert.alert('Not Connected', 'Cannot send message. Not connected to chat server.');
+    if (content.trim() && clientRef.current && clientRef.current.connected) {
+        sendWsMessage(clientRef.current, '/app/chat.sendMessage', {
+            sender: username, 
+            content: content.trim(), 
+            type: 'CHAT', 
+            roomId: roomId 
+        });
+    } else {
+      Alert.alert('Cannot send message', 'WebSocket is not connected.');
     }
   };
 
@@ -86,7 +85,6 @@ const useChatWebSocket = ({ roomId, username }: UseChatWebSocketProps): UseChatW
     messages,
     isConnected,
     sendMessage,
-    currentUser,
   };
 };
 

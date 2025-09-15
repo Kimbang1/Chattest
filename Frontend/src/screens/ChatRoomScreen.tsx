@@ -12,6 +12,14 @@ const ChatRoomScreen = ({ route }: any) => {
   // useChatWebSocket 훅에 currentUser를 전달
   const { messages, isConnected, sendMessage } = useChatWebSocket({ roomId, username: currentUser });
 
+  if (!currentUser || !roomId) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
   useEffect(() => {
     if (flatListRef.current) {
       flatListRef.current.scrollToEnd({ animated: true });
