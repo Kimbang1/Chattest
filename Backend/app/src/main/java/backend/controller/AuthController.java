@@ -29,6 +29,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<JwtAuthenticationResponse> login(@RequestBody LoginRequest request) {
+        System.out.println("로그인시 들어오는 정보:"+ request);
         return ResponseEntity.ok(authService.login(request));
     }
 
