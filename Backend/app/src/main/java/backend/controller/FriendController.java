@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/friends")
@@ -33,10 +34,17 @@ public class FriendController {
 
     // 친구 요청 보내기
     @PostMapping("/request/{receiverUsername}")
-    public ResponseEntity<Void> sendFriendRequest(@PathVariable String receiverUsername) {
+    public ResponseEntity<Map<String, String>> sendFriendRequest(@PathVariable String receiverUsername) {
         String requesterUsername = getCurrentUsername();
+        try{
         friendService.sendFriendRequest(requesterUsername, receiverUsername);
-        return ResponseEntity.ok().build();
+        Map<String, String> body = Map.of("Message", "친구요청을 보냈습니다.");
+        return ResponseEntity.ok(body);
+        }catch(RuntimeException e){
+            //이미 요청이 있거나 친구인 경우
+            Map<String, String> body = Map.of("message", e.getMessage());
+            return ResponseEntity.status(409).body(body);
+        }
     }
 
     // 친구 요청 수락

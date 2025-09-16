@@ -1,15 +1,14 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { API_BASE_URL } from '@env'; // .env 파일에서 API_BASE_URL을 가져옵니다.
+import { WEBSOCKET_URL } from '@env'; // .env 파일에서 API_BASE_URL을 가져옵니다.
 
 /**
  * SockJS는 http/https 프로토콜로 연결을 시작하므로,
  * API_BASE_URL이 'http://...' 또는 'https://...' 형태인지 확인하세요.
  */
-const WEBSOCKET_URL = `${API_BASE_URL}/ws-stomp`;
-console.log("WebSocket URL for SockJS:", WEBSOCKET_URL);
+console.log("SockJS의 웹소켓 URL:", WEBSOCKET_URL);
 
-// 메시지 수신 시 호출될 콜백 함수의 타입을 정의합니다.
+// 메시지 수신 콜백 타입
 interface MessageCallback {
   (message: any): void;
 }
@@ -20,12 +19,10 @@ interface MessageCallback {
  * @param onError - 오류 발생 시 호출될 콜백
  * @returns {Client} 설정이 완료된 STOMP 클라이언트 객체
  */
-export const createStompClient = (onConnected: () => void, onError: (error: any) => void): Client => {
+export const createStompClient = (onConnected: () => void, onError: (error: any) => void, token?: string): Client => {
   const client = new Client({
-    // SockJS를 웹소켓 폴백(fallback)으로 사용합니다.
     webSocketFactory: () => new SockJS(WEBSOCKET_URL),
-    
-    // 디버그 로그를 콘솔에 출력합니다.
+    connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
     debug: (str) => {
       console.log(new Date(), str);
     },
@@ -71,7 +68,7 @@ export const createStompClient = (onConnected: () => void, onError: (error: any)
 export const disconnectWebSocket = (client: Client | null) => {
   if (client) {
     client.deactivate();
-    console.log('WebSocket disconnected');
+    console.log('웹소켓을 종료합니다.');
   }
 };
 

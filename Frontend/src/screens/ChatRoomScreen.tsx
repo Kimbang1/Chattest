@@ -5,11 +5,10 @@ import MessageBubble from '@components/chat/MessageBubble';
 import useChatWebSocket from '@hooks/useChatWebSocket';
 
 const ChatRoomScreen = ({ route }: any) => {
-  const { roomId, roomName, currentUser } = route.params; // currentUser를 route.params에서 받도록 추가
+  const { roomId, roomName, currentUser } = route.params;
   const [inputText, setInputText] = useState<string>('');
   const flatListRef = useRef<FlatList>(null);
 
-  // useChatWebSocket 훅에 currentUser를 전달
   const { messages, isConnected, sendMessage } = useChatWebSocket({ roomId, username: currentUser });
 
   if (!currentUser || !roomId) {
@@ -27,15 +26,17 @@ const ChatRoomScreen = ({ route }: any) => {
   }, [messages]);
 
   const handleSendMessage = () => {
-    sendMessage(inputText);
-    setInputText('');
+    if (inputText.trim()) {
+      sendMessage(inputText);
+      setInputText('');
+    }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} // Adjust as needed
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <Text style={styles.roomTitle}>Chat Room: {roomName}</Text>
       {!isConnected && (
@@ -47,7 +48,7 @@ const ChatRoomScreen = ({ route }: any) => {
         ref={flatListRef}
         data={messages}
         keyExtractor={(item, index) => item.id || index.toString()}
-        renderItem={({ item }) => <MessageBubble message={item} isUser={item.sender === 'user'} />}
+        renderItem={({ item }) => <MessageBubble message={item} isUser={item.senderName === currentUser} />}
         contentContainerStyle={styles.messagesContainer}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
@@ -59,7 +60,7 @@ const ChatRoomScreen = ({ route }: any) => {
           placeholder="Type your message..."
           placeholderTextColor="#999"
           multiline
-          editable={isConnected} // Disable input if not connected
+          editable={isConnected}
         />
         <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage} disabled={!isConnected}>
           <Text style={styles.sendButtonText}>Send</Text>

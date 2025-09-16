@@ -17,7 +17,7 @@ import java.util.function.Function;
 public class JwtTokenProvider {
 
     // IMPORTANT: In a real application, this key should be stored securely and not hardcoded.
-    @Value("${application.security.jwt.secret-key:5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437}}")
+    @Value("${application.security.jwt.secret-key}")
     private String secretKey;
 
     @Value("${application.security.jwt.expiration:86400000}") // 24 hours
