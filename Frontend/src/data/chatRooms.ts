@@ -1,4 +1,4 @@
-import { ChatRoom } from '@types/chat.d';
+import { ChatRoom } from '@types/chat.d.ts';
 
 export const DUMMY_CHAT_ROOMS: ChatRoom[] = [
   { id: '1', name: 'General Chat' },

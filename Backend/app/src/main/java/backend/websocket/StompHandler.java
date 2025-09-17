@@ -1,4 +1,4 @@
-package backend.config; // 패키지 경로는 실제 프로젝트에 맞게 확인하세요.
+package backend.websocket; // 패키지 경로는 실제 프로젝트에 맞게 확인하세요.
 
 import backend.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;

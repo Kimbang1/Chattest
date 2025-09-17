@@ -35,7 +35,7 @@ const ChatRoomScreen = ({ route }: any) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <Text style={styles.roomTitle}>Chat Room: {roomName}</Text>
@@ -60,9 +60,9 @@ const ChatRoomScreen = ({ route }: any) => {
           placeholder="Type your message..."
           placeholderTextColor="#999"
           multiline
-          editable={isConnected}
+          editable={true}
         />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage} disabled={!isConnected}>
+        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
           <Text style={styles.sendButtonText}>Send</Text>
         </TouchableOpacity>
       </View>
