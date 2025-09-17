@@ -17,6 +17,9 @@ public class ChatMessageDto {
     private String sender;
     private String content;
     private MessageType type;
+    private String messageId;
+    private String createAt;
+    private boolean read;
 
     public enum MessageType {
         ENTER, TALK
