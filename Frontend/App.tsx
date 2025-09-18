@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { StatusBar, useColorScheme, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
-import { getToken, setToken as saveToken } from './src/services/authService'; // setToken 추가
-
-import AuthNavigator from './src/navigation/AuthNavigation';
-import MainNavigator from './src/navigation/MainNavigator';
+import { getToken, setToken as saveToken } from './src/services/authService';
+import AppNavigator from './src/navigation/AppNavigator';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -27,10 +25,12 @@ function App() {
     checkLoginStatus();
   }, []);
 
-  // 로그인 상태를 변경하는 함수
   const handleSetToken = async (token: string | null) => {
     if (token) {
-      await saveToken(token); // AsyncStorage에 토큰 저장
+      await saveToken(token);
+    } else {
+      // When logging out, make sure to clear the token from storage
+      await saveToken('');
     }
     setUserToken(token);
   };
@@ -47,7 +47,7 @@ function App() {
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <NavigationContainer>
-        {userToken ? <MainNavigator setToken={handleSetToken} /> : <AuthNavigator setToken={handleSetToken} />}
+        <AppNavigator isAuthenticated={!!userToken} setToken={handleSetToken} />
       </NavigationContainer>
     </SafeAreaProvider>
   );

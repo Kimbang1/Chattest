@@ -24,3 +24,37 @@ export const fetchChatRooms = async (): Promise<ChatRoom[]> => {
     return [];
   }
 };
+
+export const createChatRoom = async (name: string): Promise<ChatRoom> => {
+  const token = await getToken();
+  const response = await fetch(`${API_BASE_URL}/api/chatrooms?name=${encodeURIComponent(name)}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: ChatRoom = await response.json();
+  return data;
+};
+
+export const findOrCreatePrivateChatRoom = async (userId: number): Promise<ChatRoom> => {
+  const token = await getToken();
+  const response = await fetch(`${API_BASE_URL}/api/chatrooms/private?userId=${userId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: ChatRoom = await response.json();
+  return data;
+};

@@ -2,14 +2,12 @@ import React from 'react';
 import { Button, View } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import FriendListScreen from '@screens/FriendListScreen'; // 이름 변경
-import ChatRoomScreen from '@screens/ChatRoomScreen';
 import UserListScreen from '@screens/UserListScreen'; // 새로 추가
 import FriendRequestsScreen from '@screens/FriendRequestsScreen'; // 새로 추가
 import { logout } from '@services/authService';
 
 export type MainStackParamList = {
   FriendList: undefined;
-  ChatRoom: { roomId: string; roomName: string };
   UserList: undefined;
   FriendRequests: undefined;
 };
@@ -53,11 +51,6 @@ const MainNavigator: React.FC<MainNavigatorProps> = ({ setToken }) => {
             </View>
           ),
         })} 
-      />
-      <Stack.Screen 
-        name="ChatRoom" 
-        component={ChatRoomScreen} 
-        options={({ route }) => ({ title: route.params.roomName })} 
       />
       <Stack.Screen 
         name="UserList" 

@@ -1,22 +1,37 @@
 package backend.controller;
 
 import backend.dto.ChatRoomID;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import backend.entity.ChatRoom;
+import backend.entity.User;
+import backend.service.ChatRoomService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/chatrooms")
+@RequiredArgsConstructor
 public class ChatRoomRestController {
+
+    private final ChatRoomService chatRoomService;
 
     @GetMapping
     public List<ChatRoomID> getChatRooms() {
-        // TODO: Implement actual service call to fetch chat rooms from a database or service layer.
-        // For now, returning an empty list as hardcoded data has been removed.
-                System.out.print("ChatController:요청이 들어옴");
-        return Arrays.asList();
+        return chatRoomService.findAllRooms();
+    }
+
+    @PostMapping
+    public ChatRoom createChatRoom(@RequestParam String name) {
+        return chatRoomService.createChatRoom(name);
+    }
+
+    @PostMapping("/private")
+    public ChatRoom findOrCreatePrivateChatRoom(@RequestParam Long userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+        return chatRoomService.findOrCreatePrivateChatRoom(currentUser.getId(), userId);
     }
 }

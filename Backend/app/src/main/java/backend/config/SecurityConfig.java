@@ -31,8 +31,11 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(new AntPathRequestMatcher("/ws-stomp/**")).permitAll()
-                        .anyRequest().permitAll()
+                        .requestMatchers(
+                            new AntPathRequestMatcher("/api/auth/**"), // 로그인/회원가입 경로 허용
+                            new AntPathRequestMatcher("/ws-stomp/**")  // 웹소켓 연결 경로 허용
+                        ).permitAll()
+                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
