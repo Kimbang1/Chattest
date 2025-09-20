@@ -23,7 +23,9 @@ const AppNavigator: React.FC<AppNavigatorProps> = ({ isAuthenticated, setToken }
           {() => <HomeNavigator setToken={setToken} />}
         </Stack.Screen>
       ) : (
-        <Stack.Screen name="Auth" component={AuthNavigator} />
+        <Stack.Screen name="Auth">
+          {() => <AuthNavigator setToken={setToken} />}
+        </Stack.Screen>
       )}
     </Stack.Navigator>
   );
