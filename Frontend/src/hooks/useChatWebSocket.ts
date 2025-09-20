@@ -1,10 +1,12 @@
+// useChatWebSocket.ts
 import { useState, useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
-import { Client } from '@stomp/stompjs';
-import { createStompClient, disconnectWebSocket, sendMessage as sendWsMessage, subscribeToTopic } from '@utils/websocket';
+import { Client, Message as StompMessage } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import { getToken } from '../services/authService';
+import { WEBSOCKET_URL } from '@env';
 
-// 인터페이스 정의
+// --- 인터페이스 정의 ---
 interface Message {
   id: string;
   text: string;
@@ -25,103 +27,124 @@ interface UseChatWebSocketReturn {
   sendMessage: (content: string) => void;
 }
 
+// --- 훅 정의 ---
 const useChatWebSocket = ({ roomId, username }: UseChatWebSocketProps): UseChatWebSocketReturn => {
+  console.log(`[useChatWebSocket] Hook initialized with Room ID: ${roomId}, User: ${username}`);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const clientRef = useRef<Client | null>(null);
 
   useEffect(() => {
     const connect = async () => {
+      console.log('[useChatWebSocket] Hook mounted. Starting connection...');
       const token = await getToken();
-      console.log('--- 웹소켓 연결 시도 ---');
-      console.log("획득한 토큰:", token);
+      console.log('[useChatWebSocket] Retrieved token:', token ? `...${token.slice(-10)}` : 'null');
 
-        if (!token) {
-        console.error('❌ 토큰이 없어 웹소켓 연결을 시도할 수 없습니다.');
+      if (!token) {
         Alert.alert('Authentication Error', 'Please log in to use the chat.');
         return;
-    }
+      }
 
+      // --- onConnect callback ---
       const onConnected = () => {
+        console.log(`[STOMP] Connected ✅ Room: ${roomId}`);
         setIsConnected(true);
-        console.log('✅ 웹소켓 연결 성공');
-        
-        // 메시지 수신 토픽 구독
-        subscribeToTopic(clientRef.current, `/topic/chat/${roomId}`, (frame: any) => {
-          const payload = JSON.parse(frame.body);
-          console.log('➡️ 메시지 수신:', payload);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: String(Date.now()), // 고유 ID 생성
-              text: payload.type === 'JOIN' || payload.type === 'LEAVE' 
-              ? `${payload.sender} ${payload.type === 'JOIN' ? 'joined' : 'left'} the chat!` 
-              : payload.content,
-              sender: payload.sender,
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              type: payload.type,
-              senderName: payload.sender,
-            },
-          ]);
-        });
 
-        // 입장 메시지 전송
-        console.log('⬆️ 입장 메시지 전송');
-        sendWsMessage(clientRef.current, `/app/chat/${roomId}/addUser`, {
-          sender: username,
-          type: 'JOIN',
-          roomId: roomId,
+        // --- 구독 ---
+        const topic = `/topic/chat/${roomId}`;
+        console.log(`[STOMP] Subscribing to topic: ${topic}`);
+        const subscription = clientRef.current?.subscribe(topic, (frame: StompMessage) => {
+          try {
+            const payload = JSON.parse(frame.body);
+            console.log('[STOMP] Message received:', payload);
+
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: String(Date.now()),
+                text:
+                  payload.type === 'JOIN'
+                    ? `${payload.sender} joined the chat!`
+                    : payload.type === 'LEAVE'
+                    ? `${payload.sender} left the chat!`
+                    : payload.content,
+                sender: payload.sender,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: payload.type,
+                senderName: payload.sender,
+              },
+            ]);
+          } catch (err) {
+            console.error('❌ Failed to parse STOMP message', err);
+          }
+        });
+        console.log('[STOMP] Subscription completed:', subscription?.id);
+
+        // --- 입장 메시지 전송 ---
+        safePublish({
+          destination: `/app/chat/${roomId}/addUser`,
+          body: JSON.stringify({ sender: username, type: 'JOIN', roomId }),
         });
       };
 
-      const onError = (error: any) => {
-        console.error('❌ 웹소켓 에러 발생:', error);
+      // --- onStompError callback ---
+      const onError = (frame: any) => {
+        console.error('❌ STOMP Error:', frame);
         setIsConnected(false);
-        Alert.alert('Connection Error', 'Could not connect to chat server.');
       };
 
-      const client = createStompClient(onConnected, onError, token || undefined);
+      // --- STOMP client 생성 (SockJS 사용) ---
+      const client = new Client({
+        webSocketFactory: () => new SockJS(WEBSOCKET_URL),
+        connectHeaders: { Authorization: `Bearer ${token}` },
+        debug: (msg) => console.log('[STOMP Debug]', msg),
+        reconnectDelay: 5000,
+      });
+      client.onConnect = onConnected;
+      client.onStompError = onError;
       client.activate();
       clientRef.current = client;
     };
 
     connect();
 
-    // 컴포넌트 언마운트 시 웹소켓 연결 종료
+    // --- 언마운트 시 정리 ---
     return () => {
-      if (clientRef.current) {
-        console.log('⬇️ 퇴장 메시지 전송 후 웹소켓 연결 종료');
-        sendWsMessage(clientRef.current, `/app/chat/${roomId}/send`, {
-          sender: username,
-          type: 'LEAVE',
-          roomId: roomId,
-        });
-        disconnectWebSocket(clientRef.current);
-      }
+      console.log('[useChatWebSocket] Cleanup on unmount...');
+      safePublish({
+        destination: `/app/chat/${roomId}/send`,
+        body: JSON.stringify({ sender: username, type: 'LEAVE', roomId }),
+      });
+      clientRef.current?.deactivate();
+      setIsConnected(false);
     };
   }, [roomId, username]);
 
-
-  const sendMessage = (content: string) => {
-    if (content.trim() && clientRef.current && clientRef.current.connected) {
-      console.log('⬆️ 채팅 메시지 전송:', content);
-      sendWsMessage(clientRef.current, `/app/chat/${roomId}/send`, {
-        sender: username,
-        content: content.trim(),
-        type: 'CHAT',
-        roomId: roomId,
-      });
+  // --- 안전하게 publish ---
+  const safePublish = (payload: { destination: string; body: string }) => {
+    if (clientRef.current && clientRef.current.connected) {
+      clientRef.current.publish(payload);
     } else {
-      console.warn('⚠️ 메시지 전송 실패: 웹소켓 연결 안됨');
-      Alert.alert('Cannot send message', 'WebSocket is not connected.');
+      console.warn('[STOMP] Cannot publish, STOMP not connected yet.');
     }
   };
 
-  return {
-    messages,
-    isConnected,
-    sendMessage,
+  // --- 메시지 전송 ---
+  const sendMessage = (content: string) => {
+    if (!content.trim()) return;
+
+    safePublish({
+      destination: `/app/chat/${roomId}/send`,
+      body: JSON.stringify({
+        sender: username,
+        content: content.trim(),
+        type: 'CHAT',
+        roomId,
+      }),
+    });
   };
+
+  return { messages, isConnected, sendMessage };
 };
 
 export default useChatWebSocket;

@@ -1,12 +1,7 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
-import { WEBSOCKET_URL } from '@env'; // .env 파일에서 API_BASE_URL을 가져옵니다.
+import { WEBSOCKET_URL } from '@env';
 
-/**
- * SockJS는 http/https 프로토콜로 연결을 시작하므로,
- * API_BASE_URL이 'http://...' 또는 'https://...' 형태인지 확인하세요.
- */
-console.log("SockJS의 웹소켓 URL:", WEBSOCKET_URL);
+console.log("Native WebSocket URL:", WEBSOCKET_URL);
 
 // 메시지 수신 콜백 타입
 interface MessageCallback {
@@ -17,42 +12,36 @@ interface MessageCallback {
  * STOMP 클라이언트를 생성하고 기본 설정을 구성합니다.
  * @param onConnected - 웹소켓 연결 성공 시 호출될 콜백
  * @param onError - 오류 발생 시 호출될 콜백
+ * @param token - 인증에 사용할 JWT 토큰
  * @returns {Client} 설정이 완료된 STOMP 클라이언트 객체
  */
 export const createStompClient = (onConnected: () => void, onError: (error: any) => void, token?: string): Client => {
-  const client = new Client({
-    webSocketFactory: () => new SockJS(WEBSOCKET_URL),
-    connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-    debug: (str) => {
-      console.log(new Date(), str);
-    },
+  const connectHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+  console.log('[createStompClient] STOMP 연결 헤더:', connectHeaders);
 
-    // 연결이 끊겼을 때 3초마다 재연결을 시도합니다.
+  const client = new Client({
+    brokerURL: WEBSOCKET_URL,
+    connectHeaders: connectHeaders,
+    debug: (str) => {
+      console.log('[STOMP Debug]', new Date(), str);
+    },
     reconnectDelay: 3000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
-
-    // 연결 성공 시 onConnected 콜백을 호출합니다.
     onConnect: () => {
       console.log('✅ WebSocket Connected');
       onConnected();
     },
-    
-    // STOMP 프로토콜 오류 발생 시 호출됩니다.
     onStompError: (frame) => {
       const errorMessage = frame.headers['message'] || 'STOMP Error';
       console.error('❌ Broker reported error: ' + errorMessage);
       console.error('Additional details: ' + frame.body);
       onError(frame);
     },
-
-    // 웹소켓 자체의 연결 오류 발생 시 호출됩니다.
     onWebSocketError: (error) => {
       console.error('❌ WebSocket connection error:', error);
       onError(error);
     },
-
-    // 웹소켓 연결이 닫혔을 때 호출됩니다.
     onWebSocketClose: (event) => {
       console.log('🔌 WebSocket connection closed:', event);
     }
