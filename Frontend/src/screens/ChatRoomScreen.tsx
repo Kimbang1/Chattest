@@ -6,7 +6,10 @@ import useChatWebSocket from '@hooks/useChatWebSocket';
 
 const ChatRoomScreen = ({ route }: any) => {
   const { roomId, roomName, currentUser } = route.params;
-  console.log(`[ChatRoomScreen] Entered screen. Room ID: ${roomId}, User: ${currentUser}`);
+
+  useEffect(() => {
+    console.log(`[ChatRoomScreen] Entered screen. Room ID: ${roomId}, User: ${currentUser}`);
+  }, []);
 
   const [inputText, setInputText] = useState<string>('');
   const flatListRef = useRef<FlatList>(null);

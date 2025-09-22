@@ -75,7 +75,8 @@ public class StompHandler implements ChannelInterceptor {
      */
     private void authenticate(StompHeaderAccessor accessor, String token) {
         if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("인증 토큰이 없습니다.");
+            log.warn("인증 토큰이 없습니다. 익명 사용자로 연결합니다.");
+            return;
         }
 
         String username = jwtTokenProvider.extractUsername(token);
@@ -104,32 +105,32 @@ public class StompHandler implements ChannelInterceptor {
      * STOMP SUBSCRIBE 단계에서 구독 권한을 확인합니다.
      */
     private void authorizeSubscribe(StompHeaderAccessor accessor) {
-        if (accessor.getUser() == null) {
+        /*if (accessor.getUser() == null) {
             log.warn("인증되지 않은 사용자의 구독 요청입니다. Destination: {}", accessor.getDestination());
             throw new IllegalStateException("인증되지 않은 사용자의 구독 요청입니다.");
-        }
+        }*/
         String destination = accessor.getDestination();
         if (destination == null) {
             throw new IllegalArgumentException("구독 대상이 지정되지 않았습니다.");
         }
         // TODO: 사용자가 destination에 구독할 권한이 있는지 비즈니스 로직 추가
-        log.info("구독 권한 확인: user={}, dest={}", accessor.getUser().getName(), destination);
+        log.info("구독 권한 확인: user={}, dest={}", (accessor.getUser() != null ? accessor.getUser().getName() : "anonymous"), destination);
     }
 
     /**
      * STOMP SEND 단계에서 메시지 발행 권한을 확인합니다.
      */
     private void authorizeSend(StompHeaderAccessor accessor) {
-        if (accessor.getUser() == null) {
+        /*if (accessor.getUser() == null) {
             log.warn("인증되지 않은 사용자의 발행 요청입니다. Destination: {}", accessor.getDestination());
             throw new IllegalStateException("인증되지 않은 사용자의 발행 요청입니다.");
-        }
+        }*/
         String destination = accessor.getDestination();
         if (destination == null) {
             throw new IllegalArgumentException("발행 대상이 지정되지 않았습니다.");
         }
         // TODO: 사용자가 destination에 메시지를 보낼 권한이 있는지 비즈니스 로직 추가
-        log.info("발행 권한 확인: user={}, dest={}", accessor.getUser().getName(), destination);
+        log.info("발행 권한 확인: user={}, dest={}", (accessor.getUser() != null ? accessor.getUser().getName() : "anonymous"), destination);
     }
 
     /**
