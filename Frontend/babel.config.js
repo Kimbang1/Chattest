@@ -18,6 +18,7 @@ module.exports = {
           '@hooks': './src/hooks',
           '@utils': './src/utils',
           '@types': './src/types',
+          '@store': './src/store',
         },
       },
     ],

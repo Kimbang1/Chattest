@@ -1,39 +1,44 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { login } from '@services/authService';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@store/store';
+import { loginUser } from '@store/authSlice';
 import { AuthStackParamList } from '@navigation/AuthNavigation';
 
-// AuthNavigator로부터 setToken 함수를 props로 받습니다.
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
 interface LoginScreenProps {
   navigation: LoginScreenNavigationProp;
-  setToken: (token: string | null) => void;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, setToken }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
+  const dispatch: AppDispatch = useDispatch();
+  const { status } = useSelector((state: RootState) => state.auth);
+
+  const handleLogin = () => {
     console.log('[LoginScreen] 로그인 버튼 클릭됨.');
-    try {
-      console.log(`[LoginScreen] 로그인 시도 >> 사용자: ${username}`);
-      const response = await login(username, password);
-      console.log('[LoginScreen] 로그인 성공, 응답:', response);
-
-      Alert.alert('로그인 성공', '환영합니다!');
-      if (response.token) {
-        setToken(response.token); // App.js의 상태를 변경하여 MainNavigator로 전환
-      }
-    } catch (error: any) {
-      // 💥 authService에서 던져진 상세한 오류를 여기서 출력
-      console.error('[LoginScreen] 로그인 실패:', error);
-      Alert.alert('로그인 실패', error.message || '로그인 중 오류가 발생했습니다.');
+    if (!username || !password) {
+      Alert.alert('입력 오류', '사용자 이름과 비밀번호를 모두 입력해주세요.');
+      return;
     }
-  };
 
+    console.log(`[LoginScreen] Redux loginUser 액션 디스패치 >> 사용자: ${username}`);
+    dispatch(loginUser({ username, password }))
+      .unwrap()
+      .then((response) => {
+        console.log('[LoginScreen] 로그인 액션 성공 (unwrap):', response);
+        Alert.alert('로그인 성공', '환영합니다!');
+        // 네비게이션 전환은 App.tsx의 useSelector가 자동으로 처리합니다.
+      })
+      .catch((errorMsg) => {
+        console.error('[LoginScreen] 로그인 액션 실패 (unwrap):', errorMsg);
+        Alert.alert('로그인 실패', errorMsg || '로그인 중 오류가 발생했습니다.');
+      });
+  };
 
   return (
     <View style={styles.container}>
@@ -52,7 +57,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, setToken }) => {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title="로그인" onPress={handleLogin} />
+      {status === 'loading' ? (
+        <ActivityIndicator size="large" color="#007AFF" />
+      ) : (
+        <Button title="로그인" onPress={handleLogin} />
+      )}
       <Button title="회원가입" onPress={() => navigation.navigate('SignUp')} />
     </View>
   );

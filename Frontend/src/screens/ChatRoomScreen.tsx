@@ -3,20 +3,34 @@ import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView
 import { ChatRoomScreenStyles as styles } from '@styles/chat/ChatRoomScreenStyles';
 import MessageBubble from '@components/chat/MessageBubble';
 import useChatWebSocket from '@hooks/useChatWebSocket';
+import AsyncStorage from '@react-native-async-storage/async-storage';  // 토큰 저장소 (이미 쓰고 있을 가능성 높음)
 
 const ChatRoomScreen = ({ route }: any) => {
   const { roomId, roomName, currentUser } = route.params;
 
-  useEffect(() => {
-    console.log(`[ChatRoomScreen] Entered screen. Room ID: ${roomId}, User: ${currentUser}`);
-  }, []);
-
   const [inputText, setInputText] = useState<string>('');
+  const [token, setToken] = useState<string | null>(null);   // 🔹 토큰 상태 추가
   const flatListRef = useRef<FlatList>(null);
 
-  const { messages, isConnected, sendMessage } = useChatWebSocket({ roomId, username: currentUser });
+  // 화면 진입 로그
+  useEffect(() => {
+    console.log(`[ChatRoomScreen] Entered screen. Room ID: ${roomId}, User: ${currentUser}`);
+    const loadToken = async () => {
+      const storedToken = await AsyncStorage.getItem("token");   // 로그인 시 저장한 토큰 불러오기
+      setToken(storedToken);
+      console.log("[ChatRoomScreen] Loaded token:", storedToken);
+    };
+    loadToken();
+  }, []);
 
-  if (!currentUser || !roomId) {
+  // 토큰이 없으면 아직 연결하지 않음
+  const { messages, isConnected, sendMessage } = useChatWebSocket({ 
+    roomId, 
+    username: currentUser, 
+    token   // 🔹 token을 훅으로 전달
+  });
+
+  if (!currentUser || !roomId || !token) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>
@@ -53,7 +67,9 @@ const ChatRoomScreen = ({ route }: any) => {
         ref={flatListRef}
         data={messages}
         keyExtractor={(item, index) => item.id || index.toString()}
-        renderItem={({ item }) => <MessageBubble message={item} isUser={item.senderName === currentUser} />}
+        renderItem={({ item }) => (
+          <MessageBubble message={item} isUser={item.senderName === currentUser} />
+        )}
         contentContainerStyle={styles.messagesContainer}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />

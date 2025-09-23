@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SockJS from 'sockjs-client';
 import { Client, Frame, Message } from '@stomp/stompjs';
+import { WEBSOCKET_URL } from '@env';
 
 interface MessageType {
   sender: string;
@@ -9,25 +10,36 @@ interface MessageType {
   roomId: string;
 }
 
-export default function useChatWebSocket(roomId: string, username: string) {
+interface Props {
+  roomId: string;
+  username: string;
+  token: string | null; // JWT 토큰
+}
+
+export default function useChatWebSocket(roomId: string, username: string, token: string | null) {
   const clientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<MessageType[]>([]);
 
   useEffect(() => {
-    const socket = new SockJS('http://10.0.2.2:8080/ws-stomp'); // RN 에뮬레이터용 주소
+    if (!token) {
+      console.warn('[useChatWebSocket] 토큰 없음, 연결 건너뜀');
+      return;
+    }
+
+    const brokerURL = new SockJS(WEBSOCKET_URL);
     const client = new Client({
-      webSocketFactory: () => socket,
+      webSocketFactory: () => brokerURL,
       reconnectDelay: 5000,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
       debug: (str) => console.log('[STOMP Debug]', str),
       onConnect: (frame: Frame) => {
         console.log('[STOMP] 연결 성공', frame);
         setIsConnected(true);
-
-        // 채팅방 구독
         client.subscribe(`/topic/chat/${roomId}`, (message: Message) => {
           const payload: MessageType = JSON.parse(message.body);
-          console.log('[STOMP] 메시지 수신:', payload);
           setMessages((prev) => [...prev, payload]);
         });
       },
@@ -50,7 +62,7 @@ export default function useChatWebSocket(roomId: string, username: string) {
       client.deactivate();
       clientRef.current = null;
     };
-  }, [roomId]);
+  }, [roomId, token]);
 
   const sendMessage = (content: string) => {
     if (!content.trim()) return;
