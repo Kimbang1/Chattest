@@ -31,11 +31,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         taskScheduler.setPoolSize(1);
         taskScheduler.setThreadNamePrefix("stomp-heartbeat-");
         taskScheduler.initialize();
+        registry.setApplicationDestinationPrefixes("/app");
 
         registry.enableSimpleBroker("/topic")
                 .setHeartbeatValue(new long[]{10000, 10000})
                 .setTaskScheduler(taskScheduler);
-        registry.setApplicationDestinationPrefixes("/app");
     }
 
     @Override

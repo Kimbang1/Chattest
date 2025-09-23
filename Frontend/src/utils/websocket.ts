@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SockJS from 'sockjs-client';
 import { Client, Frame, Message } from '@stomp/stompjs';
+import { API_BASE_URL } from '@env';
 
 interface MessageType {
   sender: string;
@@ -15,14 +16,15 @@ export default function useChatWebSocket(roomId: string, username: string, jwtTo
   const [messages, setMessages] = useState<MessageType[]>([]);
 
   useEffect(() => {
-    const socket = new SockJS('http://10.0.2.2:8080/ws-stomp'); // RN 에뮬레이터용 주소
+    const socket = new SockJS(API_BASE_URL); // RN 에뮬레이터용 주소
+    console.log('소켓JS로 가는 URL:', API_BASE_URL);
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP Debug]', str),
-      //nnectHeaders: {
-       //uthorization: `Bearer ${jwtToken}`, // JWT 헤더 전달
-     //,
+      connectHeaders: {
+       Authorization: `Bearer ${jwtToken}`, // JWT 헤더 전달
+      },
       onConnect: (frame: Frame) => {
         console.log('[STOMP] 연결 성공', frame);
         setIsConnected(true);

@@ -17,7 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
-@Slf4j
+
 @Component
 @RequiredArgsConstructor
 public class StompHandler implements ChannelInterceptor {

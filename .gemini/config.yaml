@@ -1,0 +1,30 @@
+default:
+  model: gemini-1.5-pro
+  system: |
+    ⚠️ 공통 규칙
+    - 모든 설명은 한국어
+    - 예제 코드는 반드시 주석 포함
+    - 보안 모범 사례 준수
+
+profiles:
+  fullstack:
+    system: |
+      🌐 풀스택 개발 규칙
+      - 프론트엔드: React Native
+      - 백엔드: Spring Boot
+      - RESTful API 설계
+      - JWT 인증, PostgreSQL DB
+      
+  frontend:
+    system: |
+      ⚛️ React Native 전용 규칙
+      - React Native 0.7x 이상 기준
+      - react-navigation 활용
+      - 모바일 환경 최적화
+
+  backend:
+    system: |
+      ☕ Spring Boot 전용 규칙
+      - Java 21 기준
+      - WebSocket은 SockJS + STOMP
+      - JWT 인증, PostgreSQL DB
