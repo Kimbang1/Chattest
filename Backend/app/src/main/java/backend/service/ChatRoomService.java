@@ -37,23 +37,26 @@ public class ChatRoomService {
         return chatRoomRepository.save(chatRoom);
     }
 
-    @Transactional
-    public ChatRoom findOrCreatePrivateChatRoom(Long userId1, Long userId2) {
-        User user1 = userRepository.findById(userId1).orElseThrow(() -> new RuntimeException("User not found with id: " + userId1));
-        User user2 = userRepository.findById(userId2).orElseThrow(() -> new RuntimeException("User not found with id: " + userId2));
+   @Transactional
+public ChatRoom findOrCreatePrivateChatRoomByUsername(String username1, String username2) {
+    User user1 = userRepository.findByUsername(username1)
+            .orElseThrow(() -> new RuntimeException("User not found with username: " + username1));
+    User user2 = userRepository.findByUsername(username2)
+            .orElseThrow(() -> new RuntimeException("User not found with username: " + username2));
 
-        return chatRoomRepository.findPrivateChatRoomByParticipants(user1, user2)
-                .orElseGet(() -> {
-                    Set<User> participants = new HashSet<>();
-                    participants.add(user1);
-                    participants.add(user2);
+    return chatRoomRepository.findPrivateChatRoomByParticipants(user1, user2)
+            .orElseGet(() -> {
+                Set<User> participants = new HashSet<>();
+                participants.add(user1);
+                participants.add(user2);
 
-                    ChatRoom newChatRoom = ChatRoom.builder()
-                            .name(user1.getUsername() + ", " + user2.getUsername())
-                            .isPrivate(true)
-                            .participants(participants)
-                            .build();
-                    return chatRoomRepository.save(newChatRoom);
-                });
-    }
+                ChatRoom newChatRoom = ChatRoom.builder()
+                        .name(user1.getUsername() + ", " + user2.getUsername())
+                        .isPrivate(true)
+                        .participants(participants)
+                        .build();
+                return chatRoomRepository.save(newChatRoom);
+            });
+}
+
 }

@@ -29,11 +29,9 @@ public class StompHandler implements ChannelInterceptor {
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        log.info("STOMP Command{}",accessor.getCommand());
+         log.info("STOMP Command{}",accessor.getCommand());
         StompCommand command = accessor.getCommand();
-
-        log.info("STOMP 요청 수신. Command: {}, Headers: {}", command, accessor.toNativeHeaderMap());
-
+          log.info("STOMP 요청 수신. Command: {}, Headers: {}", command, accessor.toNativeHeaderMap());
 
         if (command == null) {
             return message;
@@ -41,6 +39,7 @@ public class StompHandler implements ChannelInterceptor {
 
         switch (command) {
             case CONNECT -> {
+                log.info("STOMP CONNECT 요청. 전체 헤더: {}", accessor.toNativeHeaderMap()); // 3. 백엔드 헤더 수신 확인
                 log.info("STOMP CONNECT 요청 처리 시작");
                 try {
                     String token = resolveToken(accessor);

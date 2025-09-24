@@ -29,9 +29,10 @@ public class ChatRoomRestController {
     }
 
     @PostMapping("/private")
-    public ChatRoom findOrCreatePrivateChatRoom(@RequestParam Long userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        return chatRoomService.findOrCreatePrivateChatRoom(currentUser.getId(), userId);
-    }
+    public ChatRoom findOrCreatePrivateChatRoom(@RequestParam String username) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    User currentUser = (User) authentication.getPrincipal();
+
+    return chatRoomService.findOrCreatePrivateChatRoomByUsername(currentUser.getUsername(), username);
+}
 }

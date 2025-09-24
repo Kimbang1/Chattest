@@ -4,15 +4,27 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MainStackParamList } from '../navigation/MainNavigator';
 import { fetchChatRooms, createChatRoom } from '../services/chatRoomService';
+import { getCurrentUser } from '../services/authService'; // 1. Import getCurrentUser
 import { ChatRoom } from '../types/chat';
 
 const ChatListScreen = () => {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [newRoomName, setNewRoomName] = useState('');
+  const [currentUser, setCurrentUser] = useState<string | null>(null); // 2. Add state for currentUser
   const navigation = useNavigation<StackNavigationProp<MainStackParamList>>();
 
   useEffect(() => {
-    loadChatRooms();
+    const fetchData = async () => {
+      try {
+        const user = await getCurrentUser(); // 3. Fetch current user
+        setCurrentUser(user.username); // Assuming the user object has a username property
+        await loadChatRooms();
+      } catch (error) {
+        console.error('Failed to fetch initial data:', error);
+        Alert.alert('Error', 'Failed to load data. Please try again.');
+      }
+    };
+    fetchData();
   }, []);
 
   const loadChatRooms = async () => {
@@ -36,12 +48,17 @@ const ChatListScreen = () => {
   };
 
   const renderItem = ({ item }: { item: ChatRoom }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('ChatRoom', { roomId: item.roomId, roomName: item.name })}>
+    // 4. Pass currentUser in navigation params
+    <TouchableOpacity onPress={() => navigation.navigate('ChatRoom', { roomId: item.roomId, roomName: item.name, currentUser: currentUser! })}>
       <View style={{ padding: 15, borderBottomWidth: 1, borderBottomColor: '#ccc' }}>
         <Text style={{ fontSize: 18 }}>{item.name}</Text>
       </View>
     </TouchableOpacity>
   );
+
+  if (!currentUser) {
+    return <View><Text>Loading user...</Text></View>; // Loading state while fetching user
+  }
 
   return (
     <View style={{ flex: 1 }}>

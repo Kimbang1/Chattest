@@ -35,6 +35,7 @@ export const login = async (username: string, password: string ) => {
 
     const data = await response.json();
     await AsyncStorage.setItem('jwtToken', data.token);
+    console.log('[authService] Token saved to AsyncStorage:', data.token);
     return data;
 
   } catch (error) { // 👈 3. 네트워크 오류나 위에서 던져진 오류를 여기서 잡습니다.
