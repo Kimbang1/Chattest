@@ -1,0 +1,5 @@
+default_model: gpt-5-codex
+instructions: |
+  항상 한국어로 답변하라.
+  예제 코드는 주석을 포함하라.
+  보안 모범 사례를 준수하라.

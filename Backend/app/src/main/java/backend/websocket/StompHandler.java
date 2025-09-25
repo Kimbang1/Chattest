@@ -133,31 +133,20 @@ public class StompHandler implements ChannelInterceptor {
     }
 
     /**
-     * 헤더 또는 쿼리 파라미터에서 JWT 토큰을 추출합니다.
+     * STOMP 연결 헤더에서 JWT 토큰을 추출합니다.
+     * 클라이언트는 STOMP CONNECT 프레임의 'Authorization' 헤더에 'Bearer {TOKEN}' 형식으로 토큰을 포함해야 합니다.
      */
     private String resolveToken(StompHeaderAccessor accessor) {
-        // 1. Authorization 헤더에서 토큰 찾기
         String bearerToken = accessor.getFirstNativeHeader("Authorization");
-        log.debug("Authorization 헤더에서 토큰 추출 시도. 헤더 값: {}", bearerToken);
+        log.info("Authorization 헤더에서 토큰 추출 시도. 헤더 값: {}", bearerToken);
+
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             String token = bearerToken.substring(7);
-            log.info("Authorization 헤더에서 토큰 발견.");
+            log.info("Authorization 헤더에서 토큰을 성공적으로 추출했습니다.");
             return token;
         }
 
-        // 2. (옵션) 쿼리 파라미터에서 토큰 찾기 (SockJS 구 버전 호환)
-        String query = accessor.getFirstNativeHeader("queryString");
-        if (query != null) {
-            log.debug("쿼리 스트링에서 토큰 추출 시도. 쿼리: {}", query);
-            for (String param : query.split("&")) {
-                String[] pair = param.split("=");
-                if (pair.length == 2 && pair[0].equals("token")) {
-                    log.info("쿼리 파라미터에서 토큰 발견.");
-                    return pair[1];
-                }
-            }
-        }
-        log.warn("Authorization 헤더와 쿼리 파라미터에서 토큰을 찾을 수 없습니다.");
+        log.warn("Authorization 헤더에 유효한 Bearer 토큰이 없습니다. 클라이언트가 STOMP CONNECT 헤더에 토큰을 올바르게 전달하고 있는지 확인하세요.");
         return null;
     }
 }
