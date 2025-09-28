@@ -6,10 +6,12 @@ import backend.entity.User;
 import backend.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chatrooms")
@@ -28,11 +30,13 @@ public class ChatRoomRestController {
         return chatRoomService.createChatRoom(name);
     }
 
-    @PostMapping("/private")
-    public ChatRoom findOrCreatePrivateChatRoom(@RequestParam String username) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    User currentUser = (User) authentication.getPrincipal();
+@PostMapping("/private")
+public ChatRoom findOrCreatePrivateChatRoom(
+        @AuthenticationPrincipal User currentUser,
+        @RequestBody Map<String, String> payload) {
 
-    return chatRoomService.findOrCreatePrivateChatRoomByUsername(currentUser.getUsername(), username);
+    String username = payload.get("username"); // 상대방
+    return chatRoomService.findOrCreatePrivateChatRoom(currentUser.getUsername(), username);
 }
+
 }

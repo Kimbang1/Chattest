@@ -82,7 +82,7 @@ const FriendListScreen: React.FC = () => {
     }
 
     try {
-      const chatRoom = await findOrCreatePrivateChatRoom(friend.id);
+      const chatRoom = await findOrCreatePrivateChatRoom(friend.username);
       navigation.navigate('Chats', {
         screen: 'ChatRoom',
         params: {

@@ -1,25 +1,22 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@store/store';
 import { loginUser } from '@store/authSlice';
 import { AuthStackParamList } from '@navigation/AuthNavigation';
+import { StackScreenProps } from '@react-navigation/stack';
 
-type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
+type LoginScreenProps = StackScreenProps<AuthStackParamList, 'Login'>; 
 
-interface LoginScreenProps {
-  navigation: LoginScreenNavigationProp;
-}
-
-const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation /*, route*/ }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const dispatch: AppDispatch = useDispatch();
+
+const dispatch: AppDispatch = useDispatch();
   const { status } = useSelector((state: RootState) => state.auth);
 
-  const handleLogin = () => {
+ const handleLogin = () => {
     console.log('[LoginScreen] 로그인 버튼 클릭됨.');
     if (!username || !password) {
       Alert.alert('입력 오류', '사용자 이름과 비밀번호를 모두 입력해주세요.');
@@ -32,7 +29,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       .then((response) => {
         console.log('[LoginScreen] 로그인 액션 성공 (unwrap):', response);
         Alert.alert('로그인 성공', '환영합니다!');
-        // 네비게이션 전환은 App.tsx의 useSelector가 자동으로 처리합니다.
       })
       .catch((errorMsg) => {
         console.error('[LoginScreen] 로그인 액션 실패 (unwrap):', errorMsg);

@@ -19,10 +19,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final StompHandler stompHandler; // JWT 토큰 인증 핸들러
 
    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
+public void registerStompEndpoints(StompEndpointRegistry registry) {
+         // ✅ 모바일/RN 전용: 순수 WebSocket
         registry.addEndpoint("/ws-stomp")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+                .setAllowedOriginPatterns("*");
     }
 
     @Override
