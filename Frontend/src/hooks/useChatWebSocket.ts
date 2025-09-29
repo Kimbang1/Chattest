@@ -27,6 +27,7 @@ export default function useChatWebSocket(
       console.warn('[useChatWebSocket] 토큰 없음 → 연결 스킵');
       return;
     }
+    
 
     // RN/Web 환경 모두에서 STOMP subprotocol을 명시하여 순수 WebSocket 사용
     const wsFactory = () => new WebSocket(WEBSOCKET_URL, ['v12.stomp', 'v11.stomp', 'v10.stomp']);
