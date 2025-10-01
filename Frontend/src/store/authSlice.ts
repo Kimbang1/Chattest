@@ -3,24 +3,23 @@ import * as authService from '@services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 로그인 응답 타입 정의
-interface AuthResponse {
+type AuthResponse = {
   token: string;
-}
+};
 
-// Thunk: 비동기 로그인 로직
-export const loginUser = createAsyncThunk<AuthResponse, authService.LoginRequest, { rejectValue: string }>
-(
+// Thunk: 비동기 로그인 로직 처리
+export const loginUser = createAsyncThunk<AuthResponse, authService.LoginRequest, { rejectValue: string }>(
   'auth/loginUser',
   async (credentials, { rejectWithValue }) => {
     try {
-      console.log('[authSlice] 로그인 시도 (thunk 시작):', credentials.username);
-      const response = await authService.login(credentials.username, credentials.password);
+      console.log('[authSlice] 로그인 시도 (thunk 동작):', credentials.username);
+      const response = await authService.login(credentials);
       await AsyncStorage.setItem('jwtToken', response.token);
-      console.log('[authSlice] 토큰 AsyncStorage에 저장 성공.');
+      console.log('[authSlice] 토큰 AsyncStorage 저장 성공.');
       return response;
     } catch (error: any) {
-      console.error('[authSlice] 로그인 실패 (thunk 에러):', error.message);
-      return rejectWithValue(error.message || '로그인에 실패했습니다.');
+      console.error('[authSlice] 로그인 실패 (thunk 에러):', error?.message);
+      return rejectWithValue(error?.message || '로그인에 실패했습니다.');
     }
   }
 );
@@ -44,9 +43,9 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // 동기적으로 토큰을 설정하는 액션 (앱 시작 시 사용)
+    // 초기 진입 시 토큰을 스토어에 반영하는 액션 (앱 초기화 시 호출)
     setToken: (state, action: PayloadAction<string>) => {
-      console.log('[authSlice] setToken 액션 실행. 토큰 설정됨.');
+      console.log('[authSlice] setToken 액션 실행. 토큰 상태 갱신.');
       state.token = action.payload;
       state.isAuthenticated = true;
     },
@@ -70,7 +69,7 @@ const authSlice = createSlice({
         state.status = 'succeeded';
         state.token = action.payload.token;
         state.isAuthenticated = true;
-        console.log('[authSlice] 스토어에 토큰 저장 성공:', action.payload.token);
+        console.log('[authSlice] 스토어 토큰 업데이트 완료.');
       })
       .addCase(loginUser.rejected, (state, action) => {
         console.log('[authSlice] 로그인 상태: failed');
