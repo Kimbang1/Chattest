@@ -4,7 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { store, RootState, AppDispatch } from './src/store/store';
-import { setToken } from './src/store/authSlice';
+import { setToken, logout } from './src/store/authSlice';
 import { getToken } from './src/services/authService';
 import AppNavigator from './src/navigation/AppNavigator';
 
@@ -13,6 +13,16 @@ const AppWrapper = () => {
   const { isAuthenticated, token } = useSelector((state: RootState) => state.auth);
   const dispatch: AppDispatch = useDispatch();
   const [isLoading, setIsLoading] = React.useState(true);
+  const handleTokenUpdate = React.useCallback(
+    (nextToken: string | null) => {
+      if (nextToken) {
+        dispatch(setToken(nextToken));
+        return;
+      }
+      dispatch(logout());
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -41,7 +51,7 @@ const AppWrapper = () => {
   }
 
   // Redux 스토어의 `isAuthenticated` 상태에 따라 네비게이터를 렌더링
-  return <AppNavigator isAuthenticated={isAuthenticated} />;
+  return <AppNavigator isAuthenticated={isAuthenticated} setToken={handleTokenUpdate} />;
 };
 
 function App(): React.JSX.Element {

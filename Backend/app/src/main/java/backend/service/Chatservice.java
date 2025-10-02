@@ -9,7 +9,7 @@ import java.util.*;
 
 
 @Service
-public class Chatservice {
+public class ChatService {
 
     // 메모리 기반 채팅방 저장(실제 서비스에서 DB로 변경예정)
     private final Map<String, ChatRoomID> ChatRoomIds = new HashMap<>();
@@ -33,10 +33,17 @@ public class Chatservice {
     }
 
     //메시지 처리(DB 저장 가능)
-    public ChatMessageDto proccessMessage(ChatMessageDto message){
-        //메시지 내용을 가공하거나 DB에 저장할 수 있음
+     public ChatMessageDto processMessage(ChatMessageDto message) {
+        // 예: 저장/검증/ID발급/타임스탬프 세팅 등
+        if (message.getMessageId() == null) {
+            message.setMessageId(UUID.randomUUID().toString());
+        }
+        if (message.getCreateAt() == null) {
+            message.setCreateAt(java.time.LocalDateTime.now().toString());
+        }
         message.setContent("[Process] " + message.getContent());
         return message;
     }
 
+    
 }

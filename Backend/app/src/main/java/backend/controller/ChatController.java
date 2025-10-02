@@ -1,35 +1,62 @@
 package backend.controller;
 
 import backend.dto.ChatMessageDto;
-import backend.service.Chatservice;
+import backend.service.ChatService; // 네 서비스 타입 그대로 사용
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final Chatservice chatService;
+    private final ChatService chatService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // 일반 메시지 전송
-    @MessageMapping("/chat/{roomId}/send")      // 클라이언트에서 보낸 경로 (/app/chat/{roomId}/send)
-    @SendTo("/topic/chat/{roomId}")            // 구독자들이 받는 경로
-    public ChatMessageDto sendMessage(@DestinationVariable String roomId, ChatMessageDto message) {
+    // 메시지 전송: 클라 publish 경로 = /app/chat/{roomId}/send
+    @MessageMapping("/chat/{roomId}/send")
+    public void sendMessage(@DestinationVariable String roomId,
+                            ChatMessageDto message,
+                            Principal principal) {
+        // 보안: sender는 서버에서 확정(클라 값 신뢰 X)
         message.setRoomId(roomId);
-        // 서비스를 통해 메시지 처리
-        return chatService.proccessMessage(message);
+        if (principal != null) {
+            message.setSender(principal.getName());
+        }
+
+        // 필요시 타입 기본값
+        if (message.getType() == null) {
+            message.setType(ChatMessageDto.MessageType.TALK);
+        }
+
+        // 비즈니스 처리(저장/필터링/읽음 처리 등)
+        ChatMessageDto processed = chatService.processMessage(message); 
+
+        // 구독자에게 브로드캐스트
+        String destination = "/topic/chat/" + roomId;  // 클라 구독 경로와 일치
+        messagingTemplate.convertAndSend(destination, processed);
     }
 
-    // 유저 입장 알림
-    @MessageMapping("/chat/{roomId}/addUser")   // 클라이언트에서 보낸 경로 (/app/chat/{roomId}/addUser)
-    @SendTo("/topic/chat/{roomId}")            // 구독자들이 받는 경로
-    public ChatMessageDto addUser(@DestinationVariable String roomId, ChatMessageDto message) {
+    // 유저 입장 알림: 클라 publish 경로 = /app/chat/{roomId}/addUser
+    @MessageMapping("/chat/{roomId}/addUser")
+    public void addUser(@DestinationVariable String roomId,
+                        ChatMessageDto message,
+                        Principal principal) {
         message.setRoomId(roomId);
+        message.setType(ChatMessageDto.MessageType.ENTER);
+        if (principal != null) {
+            message.setSender(principal.getName());
+        }
+        // 입장 메시지 내용(서버에서 생성)
         message.setContent(message.getSender() + "님이 입장하셨습니다.");
-        // 입장 메시지도 필요하다면 서비스에서 처리할 수 있습니다.
-        return message;
+
+        ChatMessageDto processed = chatService.processMessage(message);
+
+        String destination = "/topic/chat/" + roomId;
+        messagingTemplate.convertAndSend(destination, processed);
     }
 }
