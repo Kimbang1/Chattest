@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Client, Frame, IMessage } from '@stomp/stompjs';
-import SockJS from 'sockjs-client/dist/sockjs';
+import SockJS from 'sockjs-client';
 import { WEBSOCKET_URL } from '@env';
 
 type ChatMessageDto = {
